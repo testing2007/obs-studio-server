@@ -1,0 +1,43 @@
+server {
+        listen       8080; #阿里云防火墙记得打开此端口
+
+        location /stat {
+            rtmp_stat all;
+            rtmp_stat_stylesheet stat.xsl;
+        }
+
+        location /stat.xsl {
+            # Copy stat.xsl wherever you want
+            # and put the full directory path here
+            root /opt/nginx-master/nginx-rtmp-module;
+        }
+
+        location /hls {
+            # Serve HLS fragments
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+	    alias /Users/zhiqiangwei/Work/workspace/obs/video/hls;
+            # root /opt/nginx-1.14.2/html;
+            add_header Cache-Control no-cache;
+        }
+
+	#location /on_play {
+	#    proxy_set_header X-Forwarded-For $remote_addr;
+        #    proxy_set_header Host $http_host;
+        #    proxy_pass http://localhost:8100/on_play;
+	    # rewrite ^.*$ newname? permanent;
+	    # if ($arg_pageUrl ~* localhost) {
+            #	return 200;
+    	    # }
+   	    # return 500;
+	#}
+	
+	#location /on_connect {
+	#    proxy_set_header X-Forwarded-For $remote_addr;
+        #    proxy_set_header Host $http_host;
+        #    proxy_pass http://localhost:8100/on_connect;
+	#}
+	
+}
