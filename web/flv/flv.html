@@ -58,9 +58,6 @@
         if (flvjs.isSupported()) {
             var flvPlayer = flvjs.createPlayer({
                 type: 'flv',
-                // url: 'http://localhost:8080/rtmp/test-2021-01-08-18_58_08.flv'
-                // isLive:true,
-                // url:'http://localhost:8080/flv/test.flv'
                 url: 'http://localhost:8080/live?port=1935&app=flv&stream=test'
             });
             flvPlayer.attachMediaElement(videoElement);
