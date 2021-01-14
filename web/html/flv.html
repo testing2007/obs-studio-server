@@ -52,13 +52,13 @@
         <input style="width:100px" type="text" name="seekpoint" />
         <button onclick="flv_seekto()">跳转</button>
     </div>
-    <script src="flv.min.js"></script>
+    <script src="flvjs/flv.min.js"></script>
     <script>
         var player = document.getElementById('videoElement');
         if (flvjs.isSupported()) {
             var flvPlayer = flvjs.createPlayer({
                 type: 'flv',
-                url: 'http://localhost:8080/live?port=1935&app=flv&stream=test'
+                url: 'http://localhost:8080/live001?port=1935&app=flv&stream=roomId&auth=123'
             });
             flvPlayer.attachMediaElement(videoElement);
             flvPlayer.load(); //加载
