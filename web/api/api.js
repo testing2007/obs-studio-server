@@ -4,27 +4,27 @@ const express = require('express')
 const app = express();
 app.use(cors()); //跨域访问
 
-// var roomInfo = {}
-var roomInfo = {
-    "1" : {
-        "roomId": "1", 
-        "liveImage" : "",
-        "liveSecret" : "111",
-        "rtmpAddress" : "rtmp://localhost/flv", //flv就是推流名称，需要解析出来
-        "startTime" : "2021-01-17 13:46:30",
-        // http://服务器ip:端口号/拉流uri?port=推流端口号&app=推流名称&stream=房间号&auth=授权码
-        // http://localhost:8080/live?port=1935&app=flv&stream=1&auth=111
-        "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111"
-    },
-    "2" : {
-        "roomId": "2", 
-        "liveImage" : "",
-        "liveSecret" : "222",
-        "rtmpAddress" : "rtmp://localhost/flv", 
-        "startTime" : "2021-01-21 08:30:00",
-        "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=2&auth=222"
-    }
-}
+var roomInfo = {}
+// var roomInfo = {
+//     "1" : {
+//         "roomId": "1", 
+//         "liveImage" : "",
+//         "liveSecret" : "111",
+//         "rtmpAddress" : "rtmp://localhost/flv", //flv就是推流名称，需要解析出来
+//         "startTime" : "2021-01-17 13:46:30",
+//         // http://服务器ip:端口号/拉流uri?port=推流端口号&app=推流名称&stream=房间号&auth=授权码
+//         // http://localhost:8080/live?port=1935&app=flv&stream=1&auth=111
+//         "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111"
+//     },
+//     "2" : {
+//         "roomId": "2", 
+//         "liveImage" : "",
+//         "liveSecret" : "222",
+//         "rtmpAddress" : "rtmp://localhost/flv", 
+//         "startTime" : "2021-01-21 08:30:00",
+//         "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=2&auth=222"
+//     }
+// }
 
 app.listen(macro.api_port, ()=>{
     console.log('---api server is launched----')
@@ -48,20 +48,45 @@ app.get('/getFlvLiveURL/:roomId', (req, res) => {
     }
 })
 
+var roomId = 1
 app.get('/getPushInfo', (req, res) => {
         var info = null
         if(res.statusCode >= 200 || res.statusCode <= 299) {
+            let pushDomain = 'rtmp://localhost'
+            let pullDomain = 'http://localhost:8080'
+            let uri = 'live'
+            let pushPort = '1935'
+            let pushApp = 'flv'
+            var authCode='111' //TODO: 生成校验码
+
             info = {
                 "status": res.statusCode,
                 "message": "成功",
                 "data" : {
-                    "roomId": "1", //对应 /on_publish 的 name 字段
+                    "roomId": roomId.toString(), //对应 /on_publish 的 name 字段
                     "liveImage" : "",
-                    "liveSecret" : "123",
-                    "rtmpAddress" : "rtmp://localhost/flv", 
+                    "liveSecret" : authCode,
+                    "rtmpAddress" : pushDomain + "/" + pushApp, 
                     "startTime" : "2021-01-17 13:46:30"
                 }
             }
+            
+            // var pullHttpFlvAddress = "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111";
+            var pullHttpFlvAddress = pullDomain + '/' + uri +'?' + 'port=' +pushPort + '&app=' + pushApp + '&stream='+roomId.toString() +'&auth='+authCode
+            roomInfo[roomId.toString()] = {
+                "roomId": info.data.roomId,
+                "liveImage" : info.data.liveImage,
+                "liveSecret" : info.data.liveSecret,
+                "rtmpAddress" : info.data.rtmpAddress,
+                "startTime" : info.data.startTime,
+                // http://服务器ip:端口号/拉流uri?port=推流端口号&app=推流名称&stream=房间号&auth=授权码
+                // http://localhost:8080/live?port=1935&app=flv&stream=1&auth=111
+                "pullHttpFlvAddress": pullHttpFlvAddress
+            }
+
+            roomId += 1;
+
+
         } else {
             info = {
                 "status": res.statusCode,
