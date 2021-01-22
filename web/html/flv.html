@@ -46,6 +46,7 @@
     <br>
     <div class="controls">
         <!--<button onclick="flv_load()">加载</button>-->
+        <button onclick="getLiveInfo()">获取直播地址</button>    
         <button onclick="flv_start()">开始</button>
         <button onclick="flv_pause()">暂停</button>
         <button onclick="flv_destroy()">停止</button>
@@ -55,15 +56,6 @@
     <script src="flvjs/flv.min.js"></script>
     <script>
         var player = document.getElementById('videoElement');
-        if (flvjs.isSupported()) {
-            var flvPlayer = flvjs.createPlayer({
-                type: 'flv',
-                url: 'http://localhost:8080/live001?port=1935&app=flv&stream=roomId&auth=123'
-            });
-            flvPlayer.attachMediaElement(videoElement);
-            flvPlayer.load(); //加载
-        }
-
         function flv_start() {
             player.play();
         }
@@ -82,6 +74,51 @@
 
         function flv_seekto() {
             player.currentTime = parseFloat(document.getElementsByName('seekpoint')[0].value);
+        }
+
+        function getLiveInfo(){
+            function success(text) {
+            var textarea = document.getElementById('test-response-text');
+            textarea.value = text;
+            }
+
+            function fail(code) {
+                var textarea = document.getElementById('test-response-text');
+                textarea.value = 'Error code: ' + code;
+            }
+
+            var request = new XMLHttpRequest(); // 新建XMLHttpRequest对象
+
+            request.onreadystatechange = function () { // 状态发生变化时，函数被回调
+                if (request.readyState === 4) { // 成功完成
+                    // 判断响应结果:
+                    if (request.status === 200) {
+                        // 成功，通过responseText拿到响应的文本:
+                        // return success(request.responseText);
+                        console.log("success")
+                        if (flvjs.isSupported()) {
+                            var res = JSON.parse( request.response )
+                            console.log(res)
+                            var flvPlayer = flvjs.createPlayer({
+                                type: 'flv',
+                                url: res.pullHttpFlvAddress
+                                // url: 'http://localhost:8080/live?port=1935&app=flv&stream=1&auth=123'
+                            });
+                            flvPlayer.attachMediaElement(videoElement);
+                            flvPlayer.load(); //加载
+                        }
+                    } else {
+                        // 失败，根据响应码判断失败原因:
+                        // return fail(request.status);
+                        console.log("fail")
+                    }
+                } else {
+                    // HTTP请求还在继续...
+                }
+            }
+            // 发送请求:
+            request.open('GET', 'http://localhost:9000/getFlvLiveURL/1');
+            request.send();
         }
     </script>
 </body>
