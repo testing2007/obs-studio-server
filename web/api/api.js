@@ -4,6 +4,8 @@ const express = require('express')
 const app = express();
 app.use(cors()); //跨域访问
 
+var roomId = 1 //直播房间号
+
 var roomInfo = {}
 // var roomInfo = {
 //     "1" : {
@@ -14,7 +16,7 @@ var roomInfo = {}
 //         "startTime" : "2021-01-17 13:46:30",
 //         // http://服务器ip:端口号/拉流uri?port=推流端口号&app=推流名称&stream=房间号&auth=授权码
 //         // http://localhost:8080/live?port=1935&app=flv&stream=1&auth=111
-//         "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111"
+//         "pullAddress": "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111"
 //     },
 //     "2" : {
 //         "roomId": "2", 
@@ -22,17 +24,12 @@ var roomInfo = {}
 //         "liveSecret" : "222",
 //         "rtmpAddress" : "rtmp://localhost/flv", 
 //         "startTime" : "2021-01-21 08:30:00",
-//         "pullHttpFlvAddress": "http://localhost:8080/live?port=1935&app=flv&stream=2&auth=222"
+//         "pullAddress": "http://localhost:8080/live?port=1935&app=flv&stream=2&auth=222"
 //     }
 // }
 
 app.listen(macro.api_port, ()=>{
     console.log('---api server is launched----')
-})
-
-app.get('/', (req, res) => {
-    console.log('api sever is running')
-    res.send('<p style="color:red">API服务已启动</p>');
 })
 
 app.get('/getFlvLiveURL/:roomId', (req, res) => {
@@ -48,16 +45,44 @@ app.get('/getFlvLiveURL/:roomId', (req, res) => {
     }
 })
 
-var roomId = 1
-app.get('/getPushInfo', (req, res) => {
+/* getPushInfo: 获取推送信息
+ * liveType: 推送直播类型(flv、hls 两种形式)
+ */
+app.get('/getPushInfo/:liveType', (req, res) => {
         var info = null
-        if(res.statusCode >= 200 || res.statusCode <= 299) {
-            let pushDomain = 'rtmp://localhost'
-            let pullDomain = 'http://localhost:8080'
-            let uri = 'live'
+        console.log("liveType=%s", req.params.liveType)
+        let liveType = req.params.liveType
+        if(liveType && res.statusCode >= 200 || res.statusCode <= 299) {
+            let pullPort = '8080' //默认80端口
             let pushPort = '1935'
-            let pushApp = 'flv'
             var authCode='111' //TODO: 生成校验码
+            var domain = 'localhost'
+            var additionInfo = roomId.toString()
+            let pushAddress = null
+            var flvPullAddress = null
+            var rtmpPullAddress = null
+            var hlsPullAddress = null
+            if(liveType.localeCompare('hls') == 0) {
+                // hls推流地址：rtmp://localhost:1935/hls/{roomId}_{authCode}
+                pushAddress = 'rtmp://' + domain + ':' + pushPort + '/' + 'hls' + '/' + additionInfo
+                // flv拉流地址：http://localhost:8080/flv?port=1935&app=hls&stream={roomId}_{authCode}			
+                flvPullAddress = 'http://'+ domain + ':' + pullPort + '/' + 'flv' + '?port='+pushPort + '&app=hls' + '&stream='+additionInfo
+                // rtmp拉流地址：rtmp://localhost:1935/hls/{roomId}_{authCode}
+                rtmpPullAddress = 'rtmp://'+ domain + ':' + pushPort + '/' + 'hls' + '/' + additionInfo 
+                // hls拉流地址：http://localhost:8080/hls/{roomId}_{authCode}.m3u8 #这一这种方式 监控服务器 不能监听直播状态，且目前 google 浏览器不支持, 估计是hls是苹果协议，所以 safari 就支持
+                hlsPullAddress = 'http://' + domain + ':' + pullPort + '/' + 'hls' + '/' + additionInfo + '.m3u8'
+
+            } else {
+                // 默认就设置为flv
+                // flv推流地址：rtmp://localhost:1935/flv/{roomId}_{authCode}
+                pushAddress = 'rtmp://' + domain + ':' + pushPort + '/' + 'flv' + '/' + additionInfo
+	            // flv拉流地址: http://localhost:8080/flv?port=1935&app=flv&stream={roomId}_{authCode}
+                flvPullAddress = 'http://'+ domain + ':' + pullPort + '/' + 'flv' + '?port='+pushPort + '&app=flv' + '&stream='+additionInfo
+                // rtmp拉流地址: rtmp://localhost:1935/flv/{roomId}_{authCode}
+                rtmpPullAddress = 'rtmp://'+ domain + ':' + pushPort + '/' + 'flv' + '/' + additionInfo 
+                // hls拉流地址: null
+                hlsPullAddress = "" //不能返回 null, 否则客户端解析会崩溃
+            }
 
             info = {
                 "status": res.statusCode,
@@ -66,27 +91,25 @@ app.get('/getPushInfo', (req, res) => {
                     "roomId": roomId.toString(), //对应 /on_publish 的 name 字段
                     "liveImage" : "",
                     "liveSecret" : authCode,
-                    "rtmpAddress" : pushDomain + "/" + pushApp, 
-                    "startTime" : "2021-01-17 13:46:30"
+                    "livePushAddress" : pushAddress, 
+                    "livePullFlvAddress" : flvPullAddress,
+                    "livePullRtmpAddress" : rtmpPullAddress,
+                    "livePullHlsAddress" : hlsPullAddress,
+                    "startTime" : "2021-01-17 13:46:30" //TODO 时间戳
                 }
             }
-            
-            // var pullHttpFlvAddress = "http://localhost:8080/live?port=1935&app=flv&stream=11111&auth=111";
-            var pullHttpFlvAddress = pullDomain + '/' + uri +'?' + 'port=' +pushPort + '&app=' + pushApp + '&stream='+roomId.toString() +'&auth='+authCode
+
             roomInfo[roomId.toString()] = {
                 "roomId": info.data.roomId,
                 "liveImage" : info.data.liveImage,
                 "liveSecret" : info.data.liveSecret,
-                "rtmpAddress" : info.data.rtmpAddress,
+                "livePushAddress" : pushAddress, 
+                "livePullFlvAddress" : flvPullAddress,
+                "livePullRtmpAddress" : rtmpPullAddress,
+                "livePullHlsAddress" : hlsPullAddress,
                 "startTime" : info.data.startTime,
-                // http://服务器ip:端口号/拉流uri?port=推流端口号&app=推流名称&stream=房间号&auth=授权码
-                // http://localhost:8080/live?port=1935&app=flv&stream=1&auth=111
-                "pullHttpFlvAddress": pullHttpFlvAddress
             }
-
             roomId += 1;
-
-
         } else {
             info = {
                 "status": res.statusCode,

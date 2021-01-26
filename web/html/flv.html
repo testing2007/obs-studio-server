@@ -46,6 +46,7 @@
     <br>
     <div class="controls">
         <!--<button onclick="flv_load()">加载</button>-->
+        请输入房间号：<input type="输入房间号" id="room-id">
         <button onclick="getLiveInfo()">获取直播地址</button>    
         <button onclick="flv_start()">开始</button>
         <button onclick="flv_pause()">暂停</button>
@@ -101,7 +102,7 @@
                             console.log(res)
                             var flvPlayer = flvjs.createPlayer({
                                 type: 'flv',
-                                url: res.pullHttpFlvAddress
+                                url: res.livePullFlvAddress
                                 // url: 'http://localhost:8080/live?port=1935&app=flv&stream=1&auth=123'
                             });
                             flvPlayer.attachMediaElement(videoElement);
@@ -117,8 +118,14 @@
                 }
             }
             // 发送请求:
-            request.open('GET', 'http://localhost:9000/getFlvLiveURL/1');
-            request.send();
+            var roomId = document.getElementById('room-id').value
+            if(roomId && roomId.length>0) {
+                var url ='http://localhost:9000/getFlvLiveURL/' + 
+                request.open('GET', 'http://localhost:9000/getFlvLiveURL/'+roomId);
+                request.send();
+            } else {
+                alert('请输入直播房间号')
+            }
         }
     </script>
 </body>
