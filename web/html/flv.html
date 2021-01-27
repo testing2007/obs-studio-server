@@ -128,6 +128,7 @@
                 var params = '?roomId='+roomId + '&authCode=' + 'pull_' + roomId
                 var url ='http://localhost:9000/getPullInfo' + params
                 request.open('GET', url);
+                request.setRequestHeader('bxg-origin', 'bxg')
                 // request.setRequestHeader("Content-type","application/x-www-form-urlencoded");                
                 request.send();
 

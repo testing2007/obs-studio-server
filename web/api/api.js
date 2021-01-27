@@ -23,7 +23,7 @@ app.get('/getPullInfo', (req, res) => {
     let authCode = req.query.authCode
     var pullAuthCode = 'pull_' + roomId //相当于登录时生成的拉流授权码
     // if(roomInfo[roomId] && authCode == pullAuthCode) {
-    if(roomInfo[roomId]) {
+    if(_checkBaseInfo(req) && roomInfo[roomId]) {
         console.log("if")
         res.write( JSON.stringify(roomInfo[roomId]) )
         res.end()
@@ -45,7 +45,7 @@ app.get('/getPushInfo', (req, res) => {
         var authCode= req.query.authCode
         var pushAuthCode = 'push_' + roomId //相当于登录时生成的推流授权码
         // if(liveType && authCode && authCode == pushAuthCode && res.statusCode >= 200 || res.statusCode <= 299) {
-        if(liveType && authCode && res.statusCode >= 200 || res.statusCode <= 299) {
+        if(_checkBaseInfo(req) && liveType && authCode && res.statusCode >= 200 || res.statusCode <= 299) {
             let pullPort = '8080' //默认80端口
             let pushPort = '1935'
             var domain = 'localhost'
@@ -114,5 +114,12 @@ app.get('/getPushInfo', (req, res) => {
         console.log( info );
         res.write( JSON.stringify(info) )
         res.end()
-
 })
+
+function _checkBaseInfo(req) {
+    console.log( req );
+    if(req.headers['bxg-origin'] == 'bxg') {
+        return true
+    }
+    return false
+}
