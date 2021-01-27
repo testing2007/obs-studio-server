@@ -120,9 +120,17 @@
             // 发送请求:
             var roomId = document.getElementById('room-id').value
             if(roomId && roomId.length>0) {
-                var url ='http://localhost:9000/getFlvLiveURL/' + 
-                request.open('GET', 'http://localhost:9000/getFlvLiveURL/'+roomId);
+                /* 拉流端调用：获取拉流地址信息
+                * 请求：/getFlvLiveURL?roomId={roomId}&authCode={authCode}
+                * roomId: 房间号
+                * authCode: 授权码可以用户登录的时候产生, authCode = pull_{roomId}
+                */
+                var params = '?roomId='+roomId + '&authCode=' + 'pull_' + roomId
+                var url ='http://localhost:9000/getPullInfo' + params
+                request.open('GET', url);
+                // request.setRequestHeader("Content-type","application/x-www-form-urlencoded");                
                 request.send();
+
             } else {
                 alert('请输入直播房间号')
             }
